@@ -1,47 +1,90 @@
 import streamlit as st
 import os
-import subprocess
-from streamlit_ace import st_ace
 import time
+import uuid
+from streamlit_ace import st_ace
+import subprocess
 
-# Hide Streamlit style elements
-hide_st_style = """
-    <style>
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    </style>
-"""
-st.markdown(hide_st_style, unsafe_allow_html=True)
+# Configurations
+MAX_SESSIONS = 20
+INACTIVITY_LIMIT = 1  # Seconds
+session_activity = {}
+user_to_session = {}
 
-SESSION_DIR = "sessions"
 
-def check_session():
-    """Ensure the session is active."""
-    if "session_id" not in st.session_state:
-        st.error("Session not initialized. Please go back to the home page.")
-        st.stop()
-    session_path = os.path.join(SESSION_DIR, st.session_state.session_id)
-    os.makedirs(session_path, exist_ok=True)
-    with open(os.path.join(session_path, "last_active.txt"), "w") as f:
-        f.write(str(time.time()))
+# Helper function to generate a unique user ID
+def get_user_id():
+    if "user_id" not in st.session_state:
+        st.session_state["user_id"] = str(uuid.uuid4())
+    return st.session_state["user_id"]
 
+
+# Function to manage session IDs
+def get_session_id(user_id):
+    global session_activity, user_to_session
+    current_time = time.time()
+
+    # Reuse existing session if user already has one
+    if user_id in user_to_session:
+        session_id = user_to_session[user_id]
+        session_activity[session_id]['last_active'] = current_time
+        return session_id
+
+    # Find an available session ID
+    for session_id in range(1, MAX_SESSIONS + 1):
+        if session_id not in session_activity or \
+                (current_time - session_activity[session_id]['last_active']) > INACTIVITY_LIMIT:
+            # Assign session to user
+            session_activity[session_id] = {'user_id': user_id, 'last_active': current_time}
+            user_to_session[user_id] = session_id
+            return session_id
+
+    # If all sessions are active, reuse the oldest one
+    oldest_session = min(session_activity, key=lambda sid: session_activity[sid]['last_active'])
+    old_user_id = session_activity[oldest_session]['user_id']
+
+    # Reassign the oldest session
+    session_activity[oldest_session] = {'user_id': user_id, 'last_active': current_time}
+    user_to_session[user_id] = oldest_session
+    user_to_session.pop(old_user_id, None)
+    return oldest_session
+
+
+# Function to clean up expired sessions
+def cleanup_expired_sessions():
+    current_time = time.time()
+    expired_sessions = [
+        session_id for session_id, info in session_activity.items()
+        if (current_time - info['last_active']) > INACTIVITY_LIMIT
+    ]
+    for session_id in expired_sessions:
+        user_id = session_activity[session_id]['user_id']
+        del session_activity[session_id]
+        del user_to_session[user_id]
+
+
+# Page logic
 def generate_bbl_page():
-    check_session()
-    st.title('Copy Past Step 1 data...')
+    st.title('BibTeX to BBL Generator')
 
-    # Define the filenames for logs to be deleted
-    log_file = 'testbib.log'
-    aux_file = 'testbib.aux'
+    # Cleanup expired sessions
+    cleanup_expired_sessions()
 
-    # Add a button to clear only the log and aux files
-    if st.button('Clear .log and .aux Files'):
-        for file in [log_file, aux_file]:
-            if os.path.exists(file):
-                os.remove(file)
-        st.success("Log (.log) and auxiliary (.aux) files have been deleted successfully!")
+    # Get the current user's unique ID and session ID
+    user_id = get_user_id()
+    session_id = get_session_id(user_id)
 
-    # Display the main interface for BibTeX to BBL conversion
+    st.info(f"Your Session ID: {session_id}")
+
+    # Define file names for this session
+    tex_file = f'{session_id}-testbib.tex'
+    bib_file = f'{session_id}-temp.bib'
+    bbl_file = f'{session_id}-testbib.bbl'
+    blg_file = f'{session_id}-testbib.blg'
+    log_file = f'{session_id}-testbib.log'
+    aux_file = f'{session_id}-testbib.aux'
+
+    # Interface for BibTeX to BBL conversion
     bst_folder = 'bst'
     if not os.path.exists(bst_folder):
         st.error(f"Folder '{bst_folder}' not found. Please create the folder and add .bst files.")
@@ -52,19 +95,12 @@ def generate_bbl_page():
         else:
             selected_bst = st.selectbox('Choose a .bst file', bst_files)
 
-            st.subheader('Paste your Step 1 content below:')
-            bib_content = st_ace(language='latex', theme='github', height=500)
+            st.subheader('Paste your BibTeX content below:')
+            bib_content = st_ace(language='latex', theme='github', height=400)
 
             if st.button('Generate .bbl'):
                 if bib_content:
-                    # Set up file paths
-                    current_dir = "/mnt/d/Python/2023/11-Nov/ACES-Ref-Web-App"
-                    bib_file = 'temp.bib'
-                    tex_file = 'testbib.tex'
-                    bbl_file = 'testbib.bbl'
-                    blg_file = 'testbib.blg'
-
-                    # Save BibTeX content to a .bib file using UTF-8 encoding
+                    # Save BibTeX content to a session-specific .bib file
                     with open(bib_file, 'w', encoding='utf-8') as f:
                         f.write(bib_content)
 
@@ -79,25 +115,26 @@ def generate_bbl_page():
                     \\begin{{document}}
                     \\cite{{*}}
                     \\bibliographystyle{{bst/{selected_bst}}}
-                    \\bibliography{{temp}}
+                    \\bibliography{{{session_id}-temp}}
                     \\end{{document}}
                     """
 
-                    # Save the .tex file using UTF-8 encoding
+                    # Save the session-specific .tex file
+                    # Save the session-specific .tex file
                     with open(tex_file, 'w', encoding='utf-8') as tex_file_obj:
                         tex_file_obj.write(tex_content)
 
                     # Docker commands for pdflatex and bibtex
                     docker_pdflatex_command = [
                         'docker', 'exec',
-                        'miktex-container',  # Use the container name
-                        'latex', '/miktex/work/testbib.tex'
+                        'miktex-container',
+                        'latex', f"/miktex/work/{tex_file}"
                     ]
 
                     docker_bibtex_command = [
                         'docker', 'exec',
                         'miktex-container',
-                        'bibtex', f"/miktex/work/testbib"
+                        'bibtex', f"/miktex/work/{tex_file}"
                     ]
 
                     try:
@@ -124,6 +161,7 @@ def generate_bbl_page():
                                 st.code(bib_log_file.read())
                 else:
                     st.warning("Please provide Step 1 content before generating the file.")
+
 
 # Call the function to generate the page
 generate_bbl_page()

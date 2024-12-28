@@ -1,0 +1,58 @@
+This is BibTeX, Version 0.99d
+Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
+The top-level auxiliary file: /miktex/work/1-testbib.aux
+Reallocating 'name_of_file' (item size: 1) to 16 items.
+The style file: bst/ws-ijac.bst.bst
+Reallocating 'name_of_file' (item size: 1) to 7 items.
+Database file #1: 1-temp.bib
+<ws-ijac.bst>
+World Scientific's Bibliography Style File for IJAC
+version 1.0 (26-3-2004)
+-- by Rajesh <rajesh@wspc.com.sg>
+<Sorted version, follows inhouse BiB pattern 2>
+Too many commas in name 1 of "Huang, X., Xu, H. and Zheng, H." for entry [26]
+while executing---line 1311 of file bst/ws-ijac.bst.bst
+Too many commas in name 1 of "Huang, X., Xu, H. and Zheng, H." for entry [26]
+while executing---line 1352 of file bst/ws-ijac.bst.bst
+You've used 2 entries,
+            2842 wiz_defined-function locations,
+            661 strings with 5258 characters,
+and the built_in function-call counts, 675 in all, are:
+= -- 65
+> -- 26
+< -- 1
++ -- 10
+- -- 8
+* -- 53
+:= -- 107
+add.period$ -- 2
+call.type$ -- 2
+change.case$ -- 9
+chr.to.int$ -- 0
+cite$ -- 2
+duplicate$ -- 27
+empty$ -- 55
+format.name$ -- 8
+if$ -- 149
+int.to.chr$ -- 0
+int.to.str$ -- 2
+missing$ -- 3
+newline$ -- 9
+num.names$ -- 4
+pop$ -- 11
+preamble$ -- 1
+purify$ -- 8
+quote$ -- 0
+skip$ -- 25
+stack$ -- 0
+substring$ -- 33
+swap$ -- 10
+text.length$ -- 1
+text.prefix$ -- 0
+top$ -- 5
+type$ -- 12
+warning$ -- 0
+while$ -- 6
+width$ -- 3
+write$ -- 18
+(There were 2 error messages)
