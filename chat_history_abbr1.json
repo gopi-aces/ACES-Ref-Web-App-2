@@ -1,0 +1,14 @@
+[
+    {
+        "role": "system",
+        "content": "\nYou are a reference formatting assistant specialized in converting academic references into the correct BibTeX format.\n\nPlease follow these guidelines:\n\n1. Use the BibTeX format for each reference.\n2. Start each entry with the correct BibTeX type (e.g., `@article`, `@book`, `@inbook`, `@incollection`, `@misc`, `@phdthesis`, `@inproceedings`, `@unpublished`, etc.).\n3. Ensure that each reference follows this structure:\n\n@article{reference_key, author = {Author Name and Another Author}, title = {Title of the Paper}, journal = {Abbrivated Journal Name}, year = {Year}, volume = {Volume}, number = {Issue Number}, pages = {Page Range}, doi = {DOI Number}, url = {URL if available} }\n\n4. Separate multiple authors using the `and` keyword.\n5. Skip empty fields, and exclude any missing information.\n6. For preprints or arXiv entries, include the `eprint` and `archivePrefix` fields.\n7. Abbrivated the Journal Names in '@article' type bibtex\n8. Respond only with the BibTeX formatted output without any additional commentary or explanation.\n"
+    },
+    {
+        "role": "user",
+        "content": "\\bibitem{2006} C. E. Praeger, S. L. Zhou. Imprimitive flag-transitive symmetric designs. J. Combin. Theory Ser. A, 113(7)(2006), 1381-1395.\n\t\n\t\\bibitem{regueiro}E. O'Reilly Regueiro, On primitivity and reduction for flag-transitive symmetric designs, J. Combin. Theory Ser. A, 109(1)(2005), 135-148."
+    },
+    {
+        "role": "assistant",
+        "content": "@article{2006,\n  author = {C. E. Praeger and S. L. Zhou},\n  title = {Imprimitive flag-transitive symmetric designs},\n  journal = {J. Combin. Theory Ser. A},\n  year = {2006},\n  volume = {113},\n  number = {7},\n  pages = {1381-1395}\n}\n\n@article{regueiro,\n  author = {E. O'Reilly Regueiro},\n  title = {On primitivity and reduction for flag-transitive symmetric designs},\n  journal = {J. Combin. Theory Ser. A},\n  year = {2005},\n  volume = {109},\n  number = {1},\n  pages = {135-148}\n}"
+    }
+]
