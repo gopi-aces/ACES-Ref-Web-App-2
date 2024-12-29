@@ -1,58 +1,52 @@
 This is BibTeX, Version 0.99d
 Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
 The top-level auxiliary file: /miktex/work/1-testbib.aux
-Reallocating 'name_of_file' (item size: 1) to 16 items.
-The style file: bst/ws-ijac.bst.bst
+Reallocating 'name_of_file' (item size: 1) to 12 items.
+The style file: bst/ws-m3as.bst
 Reallocating 'name_of_file' (item size: 1) to 7 items.
 Database file #1: 1-temp.bib
-<ws-ijac.bst>
-World Scientific's Bibliography Style File for IJAC
-version 1.0 (26-3-2004)
--- by Rajesh <rajesh@wspc.com.sg>
-<Sorted version, follows inhouse BiB pattern 2>
-Too many commas in name 1 of "Huang, X., Xu, H. and Zheng, H." for entry [26]
-while executing---line 1311 of file bst/ws-ijac.bst.bst
-Too many commas in name 1 of "Huang, X., Xu, H. and Zheng, H." for entry [26]
-while executing---line 1352 of file bst/ws-ijac.bst.bst
+<ws-m3as.bst>
+BibTeX style file for M3AS
+version 1 (2010/03/03), numbered, sorted, superscript citation
+for support: Rajesh, rajesh@wspc.com.sg
 You've used 2 entries,
-            2842 wiz_defined-function locations,
-            661 strings with 5258 characters,
-and the built_in function-call counts, 675 in all, are:
-= -- 65
-> -- 26
-< -- 1
-+ -- 10
+            2527 wiz_defined-function locations,
+            580 strings with 4757 characters,
+and the built_in function-call counts, 697 in all, are:
+= -- 44
+> -- 24
+< -- 0
++ -- 12
 - -- 8
-* -- 53
-:= -- 107
+* -- 47
+:= -- 102
 add.period$ -- 2
 call.type$ -- 2
-change.case$ -- 9
+change.case$ -- 11
 chr.to.int$ -- 0
 cite$ -- 2
-duplicate$ -- 27
-empty$ -- 55
-format.name$ -- 8
-if$ -- 149
+duplicate$ -- 61
+empty$ -- 57
+format.name$ -- 10
+if$ -- 131
 int.to.chr$ -- 0
 int.to.str$ -- 2
-missing$ -- 3
-newline$ -- 9
+missing$ -- 16
+newline$ -- 10
 num.names$ -- 4
-pop$ -- 11
+pop$ -- 30
 preamble$ -- 1
 purify$ -- 8
 quote$ -- 0
-skip$ -- 25
+skip$ -- 10
 stack$ -- 0
-substring$ -- 33
-swap$ -- 10
-text.length$ -- 1
+substring$ -- 27
+swap$ -- 37
+text.length$ -- 0
 text.prefix$ -- 0
-top$ -- 5
-type$ -- 12
+top$ -- 4
+type$ -- 8
 warning$ -- 0
-while$ -- 6
+while$ -- 5
 width$ -- 3
-write$ -- 18
-(There were 2 error messages)
+write$ -- 19

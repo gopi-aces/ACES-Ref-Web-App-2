@@ -4,13 +4,13 @@ import time
 import uuid
 from streamlit_ace import st_ace
 import subprocess
+import threading
 
 # Configurations
-MAX_SESSIONS = 20
-INACTIVITY_LIMIT = 1  # Seconds
 session_activity = {}
 user_to_session = {}
-
+lock = threading.Lock()  # For concurrency handling
+INACTIVITY_LIMIT = 1000  # Time limit in seconds (e.g., 1 hour)
 
 # Helper function to generate a unique user ID
 def get_user_id():
@@ -18,63 +18,57 @@ def get_user_id():
         st.session_state["user_id"] = str(uuid.uuid4())
     return st.session_state["user_id"]
 
-
 # Function to manage session IDs
 def get_session_id(user_id):
     global session_activity, user_to_session
-    current_time = time.time()
 
-    # Reuse existing session if user already has one
-    if user_id in user_to_session:
-        session_id = user_to_session[user_id]
-        session_activity[session_id]['last_active'] = current_time
-        return session_id
-
-    # Find an available session ID
-    for session_id in range(1, MAX_SESSIONS + 1):
-        if session_id not in session_activity or \
-                (current_time - session_activity[session_id]['last_active']) > INACTIVITY_LIMIT:
-            # Assign session to user
-            session_activity[session_id] = {'user_id': user_id, 'last_active': current_time}
-            user_to_session[user_id] = session_id
+    with lock:
+        # Reuse existing session if user already has one
+        if user_id in user_to_session:
+            session_id = user_to_session[user_id]
+            session_activity[session_id]['timestamp'] = time.time()
             return session_id
 
-    # If all sessions are active, reuse the oldest one
-    oldest_session = min(session_activity, key=lambda sid: session_activity[sid]['last_active'])
-    old_user_id = session_activity[oldest_session]['user_id']
+        # Generate a new session ID using int(time.time())
+        session_id = int(time.time())
+        session_activity[session_id] = {'user_id': user_id, 'timestamp': time.time()}
+        user_to_session[user_id] = session_id
+        return session_id
 
-    # Reassign the oldest session
-    session_activity[oldest_session] = {'user_id': user_id, 'last_active': current_time}
-    user_to_session[user_id] = oldest_session
-    user_to_session.pop(old_user_id, None)
-    return oldest_session
-
-
-# Function to clean up expired sessions
-def cleanup_expired_sessions():
+# Function to clean up expired session files
+# Function to clean up expired session files based on inactivity
+def cleanup_expired_sessions(expiry_time=INACTIVITY_LIMIT):
     current_time = time.time()
     expired_sessions = [
-        session_id for session_id, info in session_activity.items()
-        if (current_time - info['last_active']) > INACTIVITY_LIMIT
+        sid for sid, data in session_activity.items()
+        if current_time - data['timestamp'] > expiry_time
     ]
-    for session_id in expired_sessions:
-        user_id = session_activity[session_id]['user_id']
-        del session_activity[session_id]
-        del user_to_session[user_id]
 
+    for sid in expired_sessions:
+        # Remove session files
+        for ext in ['.dvi', '.aux', '.log', '.bbl', '.blg', '.bib', '.tex', '.out']:
+            try:
+                os.remove(f"{sid}-testbib{ext}")
+            except FileNotFoundError:
+                pass
+        # Remove session metadata
+        user_id = session_activity[sid]['user_id']
+        user_to_session.pop(user_id, None)
+        session_activity.pop(sid, None)
+        print(f"Session {sid} cleaned up due to inactivity.")
 
 # Page logic
 def generate_bbl_page():
     st.title('BibTeX to BBL Generator')
-
-    # Cleanup expired sessions
-    cleanup_expired_sessions()
 
     # Get the current user's unique ID and session ID
     user_id = get_user_id()
     session_id = get_session_id(user_id)
 
     st.info(f"Your Session ID: {session_id}")
+
+    # Check for inactive sessions and clean them up
+    cleanup_expired_sessions()
 
     # Define file names for this session
     tex_file = f'{session_id}-testbib.tex'
@@ -83,6 +77,7 @@ def generate_bbl_page():
     blg_file = f'{session_id}-testbib.blg'
     log_file = f'{session_id}-testbib.log'
     aux_file = f'{session_id}-testbib.aux'
+
 
     # Interface for BibTeX to BBL conversion
     bst_folder = 'bst'
@@ -120,7 +115,6 @@ def generate_bbl_page():
                     """
 
                     # Save the session-specific .tex file
-                    # Save the session-specific .tex file
                     with open(tex_file, 'w', encoding='utf-8') as tex_file_obj:
                         tex_file_obj.write(tex_content)
 
@@ -134,13 +128,15 @@ def generate_bbl_page():
                     docker_bibtex_command = [
                         'docker', 'exec',
                         'miktex-container',
-                        'bibtex', f"/miktex/work/{tex_file}"
+                        'bibtex', f"/miktex/work/{session_id}-testbib"
                     ]
 
                     try:
                         # Run Docker commands for LaTeX and BibTeX
                         subprocess.run(docker_pdflatex_command, check=True)
+                        time.sleep(2)
                         subprocess.run(docker_bibtex_command, check=True)
+                        time.sleep(2)
 
                         # Read and display the generated .bbl content
                         with open(bbl_file, 'r', encoding='utf-8') as bbl_file_obj:
@@ -153,15 +149,17 @@ def generate_bbl_page():
                         # Show the LaTeX and BibTeX logs if they exist
                         if os.path.exists(log_file):
                             with open(log_file, 'r', encoding='utf-8') as tex_log_file:
-                                st.text("LaTeX Log Output:")
-                                st.code(tex_log_file.read())
+                                with st.expander("View LaTeX Log Output"):
+                                    st.code(tex_log_file.read())
                         if os.path.exists(blg_file):
                             with open(blg_file, 'r', encoding='utf-8') as bib_log_file:
-                                st.text("BibTeX Log Output:")
-                                st.code(bib_log_file.read())
+                                with st.expander("View BibTeX Log Output"):
+                                    st.code(bib_log_file.read())
                 else:
-                    st.warning("Please provide Step 1 content before generating the file.")
+                    st.warning("Please provide BibTeX content before generating the file.")
 
+    # Cleanup expired sessions (optional feature)
+    cleanup_expired_sessions()
 
 # Call the function to generate the page
 generate_bbl_page()

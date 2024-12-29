@@ -1,12 +1,15 @@
 \begin{thebibliography}{1}
+\newcommand{\enquote}[1]{#1}
 
-\bibitem{[26]}
-X.~H. Huang, X. and H.~Zheng, Selection method of turboshaft engine design
-  parameters based on helicopter flight performance requirements, {\em Journal
-  of Propulsion Technology} {\bf 43}(7)  (2022)  93--100.
+\bibitem{[20]}
+C.~Guo and G.~Lin, \enquote{The estimation method for helicopter group weight},
+  {\it Journal of Nanjing University of Aeronautics and Astronautics}  (1994)
+  17--25.
 
-\bibitem{[27]}
-C.~Zhang and C.~Guo, {\em Preliminary Design of Helicopter} (National Defense
-  Industry Press, 1993).
+\bibitem{[19]}
+W.~Z. Stepniewski and R.~A. Shinn, \enquote{A comparative study of soviet
+  versus western helicopters. part 2: Evaluation of weight, maintainability and
+  design aspects of major components}, Technical report, NASA Contractor
+  Report, 1983.
 
 \end{thebibliography}
