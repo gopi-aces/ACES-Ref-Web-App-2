@@ -6,6 +6,16 @@ from streamlit_ace import st_ace
 import subprocess
 import threading
 
+hide_st_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            header {visibility: hidden;}
+            </style>
+            """
+
+st.markdown(hide_st_style, unsafe_allow_html=True)
+
 # Configurations
 session_activity = {}
 user_to_session = {}
@@ -65,7 +75,7 @@ def generate_bbl_page():
     user_id = get_user_id()
     session_id = get_session_id(user_id)
 
-    st.info(f"Your Session ID: {session_id}")
+    #st.info(f"Your Session ID: {session_id}")
 
     # Check for inactive sessions and clean them up
     cleanup_expired_sessions()
@@ -84,7 +94,7 @@ def generate_bbl_page():
     if not os.path.exists(bst_folder):
         st.error(f"Folder '{bst_folder}' not found. Please create the folder and add .bst files.")
     else:
-        bst_files = [f for f in os.listdir(bst_folder) if f.endswith('.bst')]
+        bst_files = [f[:-4] for f in os.listdir(bst_folder) if f.endswith('.bst')]
         if not bst_files:
             st.error("No .bst files found in the 'bst' folder.")
         else:
@@ -155,6 +165,14 @@ def generate_bbl_page():
                             with open(blg_file, 'r', encoding='utf-8') as bib_log_file:
                                 with st.expander("View BibTeX Log Output"):
                                     st.code(bib_log_file.read())
+
+                        # Attempt to show .bbl content if it exists
+                        if os.path.exists(bbl_file) and os.path.getsize(bbl_file) > 0:
+                            with open(bbl_file, 'r', encoding='utf-8') as bbl_file_obj:
+                                bbl_content = bbl_file_obj.read()
+
+                            st.subheader('Generated Output (despite errors):')
+                            st.markdown(f"```latex\n{bbl_content}\n```")
                 else:
                     st.warning("Please provide BibTeX content before generating the file.")
 
