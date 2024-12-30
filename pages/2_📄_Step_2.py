@@ -6,6 +6,7 @@ from streamlit_ace import st_ace
 import subprocess
 import threading
 
+# Hide default Streamlit elements
 hide_st_style = """
             <style>
             #MainMenu {visibility: hidden;}
@@ -13,14 +14,13 @@ hide_st_style = """
             header {visibility: hidden;}
             </style>
             """
-
 st.markdown(hide_st_style, unsafe_allow_html=True)
 
 # Configurations
 session_activity = {}
 user_to_session = {}
 lock = threading.Lock()  # For concurrency handling
-INACTIVITY_LIMIT = 1000  # Time limit in seconds (e.g., 1 hour)
+INACTIVITY_LIMIT = 60  # 60 seconds for testing
 
 # Helper function to generate a unique user ID
 def get_user_id():
@@ -33,61 +33,84 @@ def get_session_id(user_id):
     global session_activity, user_to_session
 
     with lock:
-        # Reuse existing session if user already has one
         if user_id in user_to_session:
             session_id = user_to_session[user_id]
             session_activity[session_id]['timestamp'] = time.time()
             return session_id
 
-        # Generate a new session ID using int(time.time())
+        # Generate a new session ID
         session_id = int(time.time())
         session_activity[session_id] = {'user_id': user_id, 'timestamp': time.time()}
         user_to_session[user_id] = session_id
         return session_id
 
 # Function to clean up expired session files
-# Function to clean up expired session files based on inactivity
-def cleanup_expired_sessions(expiry_time=INACTIVITY_LIMIT):
+def cleanup_expired_sessions():
     current_time = time.time()
-    expired_sessions = [
-        sid for sid, data in session_activity.items()
-        if current_time - data['timestamp'] > expiry_time
-    ]
+    expired_sessions = []
 
+    # Identify expired sessions
+    with lock:
+        #print("Current time:", current_time)
+        for sid, data in session_activity.items():
+            #print(f"Session ID: {sid}, Last Activity: {data['timestamp']}, Inactive Duration: {current_time - data['timestamp']}")
+            if current_time - data['timestamp'] > INACTIVITY_LIMIT:
+                expired_sessions.append(sid)
+
+    #print("Expired sessions:", expired_sessions)
+
+    # Remove files associated with expired sessions
     for sid in expired_sessions:
-        # Remove session files
         for ext in ['.dvi', '.aux', '.log', '.bbl', '.blg', '.bib', '.tex', '.out']:
-            try:
-                os.remove(f"{sid}-testbib{ext}")
-            except FileNotFoundError:
-                pass
-        # Remove session metadata
-        user_id = session_activity[sid]['user_id']
-        user_to_session.pop(user_id, None)
-        session_activity.pop(sid, None)
-        print(f"Session {sid} cleaned up due to inactivity.")
+            file_path = f"{sid}-testbib{ext}"
+            file_path1 = f"{sid}-temp{ext}"
+
+            # Delete {sid}-testbib{ext}
+            if os.path.exists(file_path):
+                try:
+                    os.remove(file_path)
+                    print(f"Deleted: {file_path}")
+                except Exception as e:
+                    print(f"Error deleting {file_path}: {e}")
+
+            # Delete {sid}-temp{ext}
+            if os.path.exists(file_path1):
+                try:
+                    os.remove(file_path1)
+                    print(f"Deleted: {file_path1}")
+                except Exception as e:
+                    print(f"Error deleting {file_path1}: {e}")
+
+        # Clean session data
+        with lock:
+            user_id = session_activity[sid]['user_id']
+            user_to_session.pop(user_id, None)
+            session_activity.pop(sid, None)
+            #print(f"Cleaned up session {sid}")
+
+# Periodic cleanup thread function
+def periodic_cleanup():
+    while True:
+        cleanup_expired_sessions()
+        time.sleep(5)  # Check every 5 seconds
+
+# Start periodic cleanup in a separate thread
+cleanup_thread = threading.Thread(target=periodic_cleanup, daemon=True)
+cleanup_thread.start()
 
 # Page logic
 def generate_bbl_page():
-    st.title('BibTeX to BBL Generator')
+    st.title('WS Style Reference Generator')
 
     # Get the current user's unique ID and session ID
     user_id = get_user_id()
     session_id = get_session_id(user_id)
 
-    #st.info(f"Your Session ID: {session_id}")
-
-    # Check for inactive sessions and clean them up
-    cleanup_expired_sessions()
-
-    # Define file names for this session
+    # Define session-specific file names
     tex_file = f'{session_id}-testbib.tex'
     bib_file = f'{session_id}-temp.bib'
     bbl_file = f'{session_id}-testbib.bbl'
-    blg_file = f'{session_id}-testbib.blg'
     log_file = f'{session_id}-testbib.log'
-    aux_file = f'{session_id}-testbib.aux'
-
 
     # Interface for BibTeX to BBL conversion
     bst_folder = 'bst'
@@ -98,86 +121,57 @@ def generate_bbl_page():
         if not bst_files:
             st.error("No .bst files found in the 'bst' folder.")
         else:
-            selected_bst = st.selectbox('Choose a .bst file', bst_files)
+            selected_bst = st.selectbox('Choose Your Style', bst_files)
 
-            st.subheader('Paste your BibTeX content below:')
+            st.subheader('Paste your Step 1 content below:')
             bib_content = st_ace(language='latex', theme='github', height=400)
 
-            if st.button('Generate .bbl'):
+            if st.button('Generate Ref'):
                 if bib_content:
-                    # Save BibTeX content to a session-specific .bib file
+                    # Save BibTeX content
                     with open(bib_file, 'w', encoding='utf-8') as f:
                         f.write(bib_content)
 
-                    # Create LaTeX document content
+                    # LaTeX content
                     tex_content = f"""
                     \\documentclass{{article}}
                     \\usepackage{{cite}}
-                    \\usepackage{{hyperref}}
-                    \\usepackage[utf8]{{inputenc}}
-                    \\usepackage[T1]{{fontenc}}
-                    \\usepackage{{amsmath,amssymb,amsfonts}}
                     \\begin{{document}}
-                    \\cite{{*}}
+                    \\nocite{{*}}
                     \\bibliographystyle{{bst/{selected_bst}}}
                     \\bibliography{{{session_id}-temp}}
                     \\end{{document}}
                     """
 
-                    # Save the session-specific .tex file
                     with open(tex_file, 'w', encoding='utf-8') as tex_file_obj:
                         tex_file_obj.write(tex_content)
 
-                    # Docker commands for pdflatex and bibtex
+                    # Docker commands for compilation
                     docker_pdflatex_command = [
-                        'docker', 'exec',
-                        'miktex-container',
+                        'docker', 'exec', 'miktex-container',
                         'latex', f"/miktex/work/{tex_file}"
                     ]
-
                     docker_bibtex_command = [
-                        'docker', 'exec',
-                        'miktex-container',
+                        'docker', 'exec', 'miktex-container',
                         'bibtex', f"/miktex/work/{session_id}-testbib"
                     ]
 
                     try:
-                        # Run Docker commands for LaTeX and BibTeX
+                        # Compile with Docker
                         subprocess.run(docker_pdflatex_command, check=True)
-                        time.sleep(2)
                         subprocess.run(docker_bibtex_command, check=True)
-                        time.sleep(2)
 
-                        # Read and display the generated .bbl content
-                        with open(bbl_file, 'r', encoding='utf-8') as bbl_file_obj:
-                            bbl_content = bbl_file_obj.read()
-
-                        st.subheader('Generated Output:')
-                        st.markdown(f"```\n{bbl_content}\n```")
-                    except subprocess.CalledProcessError as e:
-                        st.error(f"An error occurred while running Docker LaTeX commands:\n{e}")
-                        # Show the LaTeX and BibTeX logs if they exist
-                        if os.path.exists(log_file):
-                            with open(log_file, 'r', encoding='utf-8') as tex_log_file:
-                                with st.expander("View LaTeX Log Output"):
-                                    st.code(tex_log_file.read())
-                        if os.path.exists(blg_file):
-                            with open(blg_file, 'r', encoding='utf-8') as bib_log_file:
-                                with st.expander("View BibTeX Log Output"):
-                                    st.code(bib_log_file.read())
-
-                        # Attempt to show .bbl content if it exists
-                        if os.path.exists(bbl_file) and os.path.getsize(bbl_file) > 0:
+                        # Display .bbl content
+                        if os.path.exists(bbl_file):
                             with open(bbl_file, 'r', encoding='utf-8') as bbl_file_obj:
-                                bbl_content = bbl_file_obj.read()
-
-                            st.subheader('Generated Output (despite errors):')
-                            st.markdown(f"```latex\n{bbl_content}\n```")
+                                st.subheader('Generated Output:')
+                                st.code(bbl_file_obj.read(), language='latex')
+                        else:
+                            st.error("BBL file not generated. Check logs for details.")
+                    except subprocess.CalledProcessError as e:
+                        st.error(f"Error during LaTeX/BibTeX compilation:\n{e}")
                 else:
                     st.warning("Please provide BibTeX content before generating the file.")
 
-    # Cleanup expired sessions (optional feature)
-    cleanup_expired_sessions()
-
-# Call the function to generate the page
+# Run the main page logic
 generate_bbl_page()
