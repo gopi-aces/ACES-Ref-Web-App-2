@@ -110,7 +110,9 @@ def generate_bbl_page():
     tex_file = f'{session_id}-testbib.tex'
     bib_file = f'{session_id}-temp.bib'
     bbl_file = f'{session_id}-testbib.bbl'
+    blg_file = f'{session_id}-testbib.blg'
     log_file = f'{session_id}-testbib.log'
+    aux_file = f'{session_id}-testbib.aux'
 
     # Interface for BibTeX to BBL conversion
     bst_folder = 'bst'
@@ -121,7 +123,14 @@ def generate_bbl_page():
         if not bst_files:
             st.error("No .bst files found in the 'bst' folder.")
         else:
-            selected_bst = st.selectbox('Choose Your Style', bst_files)
+            # Assuming bst_files is already populated with your .bst file names
+            search_term = st.text_input("Search for your style:")
+            filtered_bst_files = [file for file in bst_files if search_term.lower() in file.lower()]
+
+            if filtered_bst_files:  # Check if there are any filtered results
+                selected_bst = st.selectbox('Choose Your Style', filtered_bst_files)
+            else:
+                st.warning("No styles found matching your search.")
 
             st.subheader('Paste your Step 1 content below:')
             bib_content = st_ace(language='latex', theme='github', height=400)
@@ -157,21 +166,42 @@ def generate_bbl_page():
                     ]
 
                     try:
-                        # Compile with Docker
+                        # Run Docker commands for LaTeX and BibTeX
                         subprocess.run(docker_pdflatex_command, check=True)
+                        time.sleep(2)
                         subprocess.run(docker_bibtex_command, check=True)
+                        time.sleep(2)
 
-                        # Display .bbl content
-                        if os.path.exists(bbl_file):
+                        # Check if .bbl file exists and display its content
+                        if os.path.exists(bbl_file) and os.path.getsize(bbl_file) > 0:
                             with open(bbl_file, 'r', encoding='utf-8') as bbl_file_obj:
-                                st.subheader('Generated Output:')
-                                st.code(bbl_file_obj.read(), language='latex')
+                                bbl_content = bbl_file_obj.read()
+
+                            st.subheader('Generated Output:')
+                            st.markdown(f"```latex\n{bbl_content}\n```")
                         else:
-                            st.error("BBL file not generated. Check logs for details.")
+                            st.warning("The .bbl file was not generated or is empty.")
                     except subprocess.CalledProcessError as e:
-                        st.error(f"Error during LaTeX/BibTeX compilation:\n{e}")
-                else:
-                    st.warning("Please provide BibTeX content before generating the file.")
+                        st.error(f"An error occurred while running Docker LaTeX commands:\n{e}")
+                        # Show the LaTeX and BibTeX logs if they exist
+                        if os.path.exists(log_file):
+                            with open(log_file, 'r', encoding='utf-8') as tex_log_file:
+                                with st.expander("View LaTeX Log Output"):
+                                    st.code(tex_log_file.read())
+                        if os.path.exists(blg_file):
+                            with open(blg_file, 'r', encoding='utf-8') as bib_log_file:
+                                with st.expander("View BibTeX Log Output"):
+                                    st.code(bib_log_file.read())
+
+                        # Attempt to show .bbl content if it exists
+                        if os.path.exists(bbl_file) and os.path.getsize(bbl_file) > 0:
+                            with open(bbl_file, 'r', encoding='utf-8') as bbl_file_obj:
+                                bbl_content = bbl_file_obj.read()
+
+                            st.subheader('Generated Output (despite errors):')
+                            st.markdown(f"```latex\n{bbl_content}\n```")
+                    else:
+                        st.warning("Please provide BibTeX content before generating the file.")
 
 # Run the main page logic
 generate_bbl_page()
