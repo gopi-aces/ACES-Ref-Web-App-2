@@ -81,8 +81,7 @@ SYSTEM_MESSAGE = {
 You are a reference formatting assistant specialized in converting academic references into the correct BibTeX format.
 
 Please follow these guidelines:
-
-1. Don't Change the labels.
+1. Retain the original labels exactly as they appear in the input BibTeX (whether they are numeric or text-based).
 2. Start each entry with the correct BibTeX type (e.g., `@article`, `@book`, `@inbook`, `@incollection`, `@misc`, `@phdthesis`, `@inproceedings`, `@unpublished`, etc.).
 3. Ensure that each reference follows this structure:
 
