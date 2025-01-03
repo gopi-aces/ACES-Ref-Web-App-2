@@ -83,7 +83,7 @@ You are a reference formatting assistant specialized in converting academic refe
 Please follow these guidelines:
 
 1. Use the BibTeX format for each reference.
-2. Each entry has a unique citation key. Ensure that these keys are unique across your entire BibTeX file to avoid conflicts when citing.
+2. Each entry has a unique \bibitem{lable}. Please maintain the same label from input during conversion.
 3. Start each entry with the correct BibTeX type (e.g., `@article`, `@book`, `@inbook`, `@incollection`, `@misc`, `@phdthesis`, `@inproceedings`, `@unpublished`, etc.).
 4. Ensure that each reference follows this structure:
 
