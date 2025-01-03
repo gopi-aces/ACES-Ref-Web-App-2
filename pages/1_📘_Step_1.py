@@ -91,7 +91,7 @@ Please follow these guidelines:
 4. Separate multiple authors using the `and` keyword.
 5. Skip empty fields, and exclude any missing information.
 6. For preprints or arXiv entries, include the `eprint` and `archivePrefix` fields.
-7. Abbrivated the Journal Names in '@article' type bibtex
+7. Ensure that you use the same label (mylabel) for all References
 8. Respond only with the BibTeX formatted output without any additional commentary or explanation.
 """
 }
