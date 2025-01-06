@@ -127,25 +127,29 @@ def BibTeX_abbr_New():
         combined_response = ""
 
         try:
-            for chunk in input_chunks:
-                response = openai.ChatCompletion.create(
-                    model=current_model,
-                    messages=history + [{"role": "user", "content": chunk}],
-                    stream=True
-                )
+            with st.spinner(text="In progress..."):
+                for chunk in input_chunks:
+                    # ChatCompletion with OpenAI API
+                    response = openai.ChatCompletion.create(
+                        model=current_model,
+                        messages=history + [{"role": "user", "content": chunk}],
+                        stream=True
+                    )
 
-                assistant_response_stream = ""
-                for part in response:
-                    if "choices" in part:
-                        delta = part["choices"][0]["delta"]
-                        if "content" in delta:
-                            assistant_response_stream += delta["content"]
+                    assistant_response_stream = ""
+                    for part in response:
+                        if "choices" in part:
+                            delta = part["choices"][0]["delta"]
+                            if "content" in delta:
+                                assistant_response_stream += delta["content"]
 
-                combined_response += assistant_response_stream
+                    combined_response += assistant_response_stream
 
+            # Display the formatted BibTeX content
             with st.chat_message("assistant"):
                 st.markdown(f"```bibtex\n{combined_response}\n```")
 
+            # Append assistant response to history
             history.append({"role": "assistant", "content": combined_response})
             save_history(session_id, history)
 
@@ -155,7 +159,6 @@ def BibTeX_abbr_New():
             st.error(f"OpenAI error: {e}")
         except Exception as e:
             st.error(f"Unexpected error: {e}")
-
 
 if __name__ == "__main__":
     BibTeX_abbr_New()
