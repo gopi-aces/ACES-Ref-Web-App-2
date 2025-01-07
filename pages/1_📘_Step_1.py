@@ -128,7 +128,7 @@ def BibTeX_abbr_New():
 
         try:
             with st.spinner(text="In progress..."):
-                time.sleep(3)
+                time.sleep(4)
                 st.success("Done!")
                 for chunk in input_chunks:
                     # ChatCompletion with OpenAI API
