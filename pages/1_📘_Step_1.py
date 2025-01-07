@@ -104,7 +104,7 @@ def BibTeX_abbr_New():
     session_id = st.session_state.session_id
     history = load_history(session_id)
 
-    if st.button("Delete All History Except First Message"):
+    if st.button("Delete All History"):
         history = [{"role": "system", "content": SYSTEM_MESSAGE["content"]}]
         save_history(session_id, history)
         st.success("Chat history trimmed to keep only the first message.")
@@ -128,6 +128,8 @@ def BibTeX_abbr_New():
 
         try:
             with st.spinner(text="In progress..."):
+                time.sleep(3)
+                st.success("Done!")
                 for chunk in input_chunks:
                     # ChatCompletion with OpenAI API
                     response = openai.ChatCompletion.create(
@@ -152,6 +154,10 @@ def BibTeX_abbr_New():
             # Append assistant response to history
             history.append({"role": "assistant", "content": combined_response})
             save_history(session_id, history)
+
+            # Trigger balloons after displaying the BibTeX content
+            st.balloons()
+
 
         except openai.error.InvalidRequestError as e:
             st.error(f"Invalid request error: {e}")
