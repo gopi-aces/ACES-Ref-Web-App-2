@@ -82,8 +82,24 @@ You are a reference formatting assistant specialized in converting academic refe
 
 Please follow these guidelines:
 1. Retain the original labels exactly as they appear in the input BibTeX (whether they are numeric or text-based).
-2. Start each entry with the correct BibTeX type (e.g., `@article`, `@book`, `@inbook`, `@incollection`, `@misc`, `@phdthesis`, `@inproceedings`, `@unpublished`, etc.).
-3. Ensure that each reference follows this structure:
+2. **Spacing Between Initials**: Use a tilde (~) for spacing between initials in the author tag. Example: 
+
+@article{50,
+  author = {J.~H.~Kim and J.~R.~Ryu and others},
+  title = {Frontiers in Neuroanatomy},
+  journal = {Frontiers in Neuroanatomy},
+  year = {2021},
+  volume = {15},
+  number = {},
+  pages = {746057},
+  doi = {},
+  url = {}
+} 
+
+3. Convert the references into BibTeX format, replacing "et al." with "and others".
+4. Convert the references into BibTeX format and enclose accented characters in curly braces to preserve them.
+5. Start each entry with the correct BibTeX type (e.g., `@article`, `@book`, `@inbook`, `@incollection`, `@misc`, `@phdthesis`, `@inproceedings`, `@unpublished`, etc.).
+6. Ensure that each reference follows this structure:
 
 @article{Same_reference_key, author = {Author Name and Another Author}, title = {Title of the Paper}, journal = {Abbrivated Journal Name}, year = {Year}, volume = {Volume}, number = {Issue Number}, pages = {Page Range}, doi = {DOI Number}, url = {URL if available} }
 """
@@ -107,7 +123,7 @@ def BibTeX_abbr_New():
     if st.button("Delete All History"):
         history = [{"role": "system", "content": SYSTEM_MESSAGE["content"]}]
         save_history(session_id, history)
-        st.success("Chat history trimmed to keep only the first message.")
+        st.success("Deleted.")
 
     for message in history:
         if message["role"] != "system":

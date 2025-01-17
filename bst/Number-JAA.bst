@@ -21,6 +21,7 @@ ENTRY
     author
     booktitle
     chapter
+    doi
     edition
     editor
     howpublished
@@ -60,7 +61,7 @@ FUNCTION {disp.msg.screen} { #1 }
 
 FUNCTION {type.msg}
 { disp.msg.screen
-     { "<ws-ijac.bst>"
+     { "<ws-JAA.bst>"
        top$
        "World Scientific's Bibliography Style File for IJAC"
        top$
@@ -293,6 +294,63 @@ FUNCTION {format.eeditors}
   if$
 }
 
+FUNCTION {format.isbn}
+{ isbn "isbn" bibinfo.check
+  duplicate$ empty$ 'skip$
+    {
+      new.block
+      "ISBN " swap$ *
+    }
+  if$
+}
+
+
+FUNCTION {format.issn}
+{ issn "issn" bibinfo.check
+  duplicate$ empty$ 'skip$
+    {
+      new.block
+      "ISSN " swap$ *
+    }
+  if$
+}
+
+
+FUNCTION {format.url}
+{ url empty$
+    { "" }
+    { "\urlprefix\url{" url * "}" * }
+  if$
+}
+
+
+FUNCTION {format.doi}
+{ doi empty$
+    { "" }
+    { "\doi{" doi * "}" * }
+  if$
+}
+
+FUNCTION {format.note}
+{
+ note empty$
+    { "" }
+    { note #1 #1 substring$
+      duplicate$ "{" =
+        'skip$
+        { output.state mid.sentence =
+          { "l" }
+          { "u" }
+        if$
+        change.case$
+        }
+      if$
+      note #2 global.max$ substring$ * "note" bibinfo.check
+    }
+  if$
+}
+
+
 FUNCTION {format.title}
 { title empty$
     { "" }
@@ -477,7 +535,7 @@ FUNCTION {format.pages}
     { "" }
     { pages multi.page.check
         { "" pages n.dashify tie.or.space.connect }
-        { "p." pages tie.or.space.connect }
+        { "" pages tie.or.space.connect }
       if$
     }
   if$
@@ -520,12 +578,12 @@ FUNCTION {format.journal.volume.number}
 FUNCTION {format.series.volume.number}
 { series empty$
 %%    { "empty " t * " in " * cite$ * warning$ ""}
-    { "" }                  
+    { "" }
     { series emphasize }
   if$
-  volume empty$ 
-    { "" *}                 
-    { " " * volume bold *}  
+  volume empty$
+    { "" *}
+    { " " * volume bold *}
 %%    { "vol.~" volume * }
   if$
   month empty$
@@ -538,7 +596,7 @@ FUNCTION {format.series.volume.number}
 FUNCTION {format.volume}
 { volume empty$
     { "" }
-    { volume bold }            
+    { volume bold }
 %%    { "vol.~" volume * }
   if$
 }
@@ -597,7 +655,7 @@ FUNCTION {format.thesis.type}
 }
 
 FUNCTION {empty.misc.check}
-{ author empty$ title empty$ howpublished empty$ 
+{ author empty$ title empty$ howpublished empty$
   month empty$ year empty$ note empty$
   and and and and and
     { "all relevant fields are empty in " cite$ * warning$ }
@@ -695,13 +753,13 @@ FUNCTION {format.incoll.inproc.crossref}
           crossref * warning$
           ""
         }
-        { " in {\em " booktitle * "\/}" * }   
+        { " in {\em " booktitle * "\/}" * }
       if$
     }
     { " in " key * }
       if$
     }
-    { " in " format.crossref.editor * }   
+    { " in " format.crossref.editor * }
   if$
   "\cite{" * crossref * "}" *
 }
@@ -730,9 +788,9 @@ FUNCTION {push.date}
 
 FUNCTION {format.address.date}
 { address empty$
-    {year empty$ 
+    {year empty$
         { "" }
-        { push.date *} 
+        { push.date *}
         if$
     }
     { "(" address * ", " * year * ")" * }
@@ -742,9 +800,9 @@ FUNCTION {format.address.date}
 FUNCTION {format.school.date}
 { school empty$
     {"school is missing " cite$ * warning$
-    year empty$ 
+    year empty$
         { "" }
-        { push.date *} 
+        { push.date *}
         if$
     }
     { "(" school * ", " * year * ")" * }
@@ -756,12 +814,12 @@ FUNCTION {push.address.publisher.year}
 { address empty$
     { publisher empty$
         { url empty$
-            { year empty$ 
+            { year empty$
                 { "" }
-                { push.date } 
+                { push.date }
               if$
             }
-            { 
+            {
               push.url
               year empty$
                 { skip$ }
@@ -778,7 +836,7 @@ FUNCTION {push.address.publisher.year}
         }
       if$
     }
-    { 
+    {
       publisher empty$
         { skip$ }
         { "(" publisher * ", " * address * }
@@ -806,7 +864,10 @@ FUNCTION {article}
       format.pages output
     }
   if$
-  note output
+  format.eprint output
+  format.doi output
+  format.url output
+  format.note output
   fin.entry
 }
 
@@ -834,7 +895,9 @@ FUNCTION {book}
     }
   if$
   new.block
-  note output
+  format.doi output
+  format.url output
+  format.note output
   fin.entry
 }
 
@@ -859,7 +922,9 @@ FUNCTION {booklet}
   {push.address.publisher.year "publihser" output.check}
   if$
   new.block
-  note output
+  format.doi output
+  format.url output
+  format.note output
   fin.entry
 }
 
@@ -878,7 +943,7 @@ FUNCTION {inbook}
       format.number.series output
       push.address.publisher.year "publisher" output.check
       address output
-      format.chapter.ppages "chapter and pages" output.check      
+      format.chapter.ppages "chapter and pages" output.check
     }
     { format.chapter.ppages "chapter and pages" output.check
       new.block
@@ -887,7 +952,9 @@ FUNCTION {inbook}
   if$
   format.edition output
   new.block
-  note output
+  format.doi output
+  format.url output
+  format.note output
   fin.entry
 }
 
@@ -911,7 +978,9 @@ FUNCTION {incollection}
     }
   if$
   new.block
-  note output
+  format.doi output
+  format.url output
+  format.note output
   fin.entry
 }
 
@@ -934,7 +1003,9 @@ FUNCTION {inproceedings}
     }
   if$
   new.block
-  note output
+  format.doi output
+  format.url output
+  format.note output
   fin.entry
 }
 
@@ -969,7 +1040,9 @@ FUNCTION {manual}
   format.edition output
   format.date output
   new.block
-  note output
+  format.doi output
+  format.url output
+  format.note output
   fin.entry
 }
 
@@ -983,7 +1056,9 @@ FUNCTION {mastersthesis}
   blank.sep
   format.date output
   new.block
-  note output
+  format.doi output
+  format.url output
+  format.note output
   fin.entry
 }
 
@@ -1003,7 +1078,9 @@ FUNCTION {misc}
   if$
   howpublished output
   format.date output
-  note output
+  format.doi output
+  format.url output
+  format.note output
   fin.entry
   empty.misc.check
 }
@@ -1020,7 +1097,9 @@ FUNCTION {phdthesis}
   if$
   format.ppages output
   new.block
-  note output
+  format.doi output
+  format.url output
+  format.note output
   fin.entry
 }
 
@@ -1031,15 +1110,17 @@ FUNCTION {proceedings}
     { format.editors output.nonnull }
   if$
   format.btitle "title" output.check
-  blank.sep  
-  format.series.volume.number output   
+  blank.sep
+  format.series.volume.number output
   editor empty$
     'skip$
     { organization output }
   if$
    push.address.publisher.year "publisher" output.check
   new.block
-  note output
+  format.doi output
+  format.url output
+  format.note output
   fin.entry
 }
 
@@ -1054,9 +1135,11 @@ FUNCTION {techreport}
   {format.mdate output}
   {format.address.date output}
   if$
-  note output
+  format.doi output
+  format.url output
+  format.note output
   fin.entry
-  new.block  
+  new.block
 }
 
 FUNCTION {unpublished}
@@ -1065,6 +1148,9 @@ FUNCTION {unpublished}
   format.title.p "title" output.check
   note "note" output.check
   format.date output
+  format.doi output
+  format.url output
+  format.note output
   fin.entry
 }
 
@@ -1272,7 +1358,7 @@ FUNCTION {presort}
     }
     { type$ "book" =
       type$ "inbook" =
-      or 
+      or
         { author.editor.sort }
         { type$ "proceedings" =
           type$ "periodical" =
@@ -1286,7 +1372,7 @@ FUNCTION {presort}
                 { type$ "standard" =
                    { author.organization.institution.sort }
                    { author.sort }
-                 if$ 
+                 if$
                 }
               if$
             }
@@ -1342,7 +1428,18 @@ FUNCTION {begin.bib}
     'skip$
     { preamble$ write$ newline$ }
   if$
-  "\begin{thebibliography}{"  longest.label  * "}" * write$ newline$
+  "\begin{thebibliography}{"  longest.label  * "}" *
+  write$ newline$
+  "\providecommand{\url}[1]{\texttt{#1}}"
+  write$ newline$
+  "\providecommand{\urlprefix}{URL }"
+  write$ newline$
+  "\expandafter\ifx\csname urlstyle\endcsname\relax"
+  write$ newline$
+  "  \providecommand{\doi}[1]{doi:\discretionary{}{}{}#1}\else"
+  write$ newline$
+  "  \providecommand{\doi}{doi:\discretionary{}{}{}\begingroup \urlstyle{rm}\Url}\fi"
+  write$ newline$
 }
 
 EXECUTE {begin.bib}
@@ -1361,4 +1458,4 @@ EXECUTE {end.bib}
 %%
 %% End of file
 %% For Support: ykoh@wspc.com.sg, rajesh@wspc.com.sg
-%% ws-ijac.bst (C) World Scientific Publishing Co.
+%% ws-JAA.bst (C) World Scientific Publishing Co.
